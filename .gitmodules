@@ -1,0 +1,6 @@
+[submodule "challenge-2-dataset-and-documentation"]
+	path = challenge-2-dataset-and-documentation
+	url = ssh://git@code.peren.fr:2224/hackathon-2024/challenge-2-dataset-and-documentation.git
+[submodule "platform-docs-versions"]
+	path = platform-docs-versions
+	url = ssh://git@code.peren.fr:2224/hackathon-2024/retrieval-modules/platform-docs-versions.git
