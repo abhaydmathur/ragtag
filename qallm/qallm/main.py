@@ -4,7 +4,6 @@ import sys
 
 from .preprocessing import Configuration
 
-
 def parse_args(args):
     parser = argparse.ArgumentParser(
         description="Adversarial machine learning robustness evaluations for ML based N-IDS."

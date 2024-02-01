@@ -6,8 +6,8 @@ Our repository contains submodules, linking to the datasets made available for t
 it is thus required to clone this repository with the recursion flag, as below,
 
 ```bash
-git clone --recurse-submodules git@github.com:abhaydmathur/ragtag.git
-cd qallm & pip install .
+git clone --recurse-submodules git@github.com:abhaydmathur/ragtag.git ; cd ragtag
+cd qallm ; pip install .
 ```
 
 ```bash
