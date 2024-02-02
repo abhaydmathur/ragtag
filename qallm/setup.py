@@ -10,8 +10,9 @@ install_requires = [
     "numpy>=1.24.1",
     "pandas>=1.5.2",
     "setuptools",
-    "lingua-language-detector"
+    "lingua-language-detector",
 ]
+
 
 def read(rel_path):
     here = os.path.abspath(os.path.dirname(__file__))
@@ -39,9 +40,8 @@ setup(
     install_requires=install_requires,
     packages=find_packages(),
     include_package_data=True,
-    entry_points='''
+    entry_points="""
         [console_scripts]
         qallm=qallm.main:main
-    ''',
+    """,
 )
-
