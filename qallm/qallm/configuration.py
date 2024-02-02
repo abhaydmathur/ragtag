@@ -70,6 +70,22 @@ class Configuration:
             self.available_translators_to_eng[language] = translator
             return translator
 
+    def translation_to_src(self, question, origin_language):
+        self.logger.info(
+            f"Translating question, {question}, from english to {origin_language}."
+        )
+        translator = pipeline(
+            "translation",
+            model=self.translater_model,
+            tokenizer=self.translated_tokenizer,
+            src_lang="eng_Latn",
+            tgt_lang=origin_language,
+        )
+        # translator = self.load_translation_pipeline_to_eng(src_language)
+        output = translator(question, max_length=400)
+        output = output[0]["translation_text"]
+        return output
+
     def translation_to_eng(self, question, src_language):
         self.logger.info(
             f"Translating question, {question}, from {src_language} to 'eng_Latn'."
