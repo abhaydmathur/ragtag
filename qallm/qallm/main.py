@@ -54,9 +54,19 @@ def cli(args):
     config = Configuration(
         args.loglevel, args.csv_file, args.input_question, args.output_file
     )
-    question_index, question, question_language = config.get_next_element()
-    print(question_index, question, question_language.name)
-    config.translation(question, question_language.name)
+    current_entry = config.get_next_element()
+    questions = {}
+    config.load_translation_model()
+    while current_entry:
+        question_index, question, question_language = current_entry
+        if question_language.name != 'EN':
+            question_english = config.translation_to_eng(question, question_language.name+"_Latn")
+            questions[question_index] = {"question": question, "question_english": question_english, "source_language":  question_language.name}
+        else:
+            questions[question_index] = {"question": question, "question_english": question, "source_language": 'EN'}
+        current_entry = config.get_next_element()
+
+    config.logger.info(f"Loaded and translated all ")
 
 def main():
     cli(sys.argv[1:])

@@ -8,6 +8,7 @@ import pandas as pd
 class Configuration:
     def __init__(self, loglevel, csv_file, input_question, output_file):
         self.logger = self.setup_logging(loglevel)
+        self.available_translators_to_eng = {}
         self.questions = {}
         if csv_file:
             questions_df = pd.read_csv(csv_file[0], sep=";")
@@ -36,23 +37,38 @@ class Configuration:
 
     def get_next_element(self):
         # get the next question to handle
-        question_index = next(iter(self.questions))
+        question_index = next(iter(self.questions), None)
+        print(question_index)
+        if question_index is None:
+            return None
         question = self.questions[question_index]
         question_language = self._find_language(question)
         # return the id, question, and the language in which the question was asked
+        del self.questions[question_index]
         return (question_index, question, question_language)
     
-    def translation(self, question, language):
-        self.logger.info(f"Translating question, {question}, from {language} to english.")
+    def load_translation_model(self):
         model_path = "/gpfsdswork/dataset/HuggingFace_Models/facebook/nllb-200-3.3B"
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.translater_model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
+        self.translated_tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-        translator = pipeline('translation', model=model, tokenizer=tokenizer, src_lang="fra_Latn", tgt_lang='eng_Latn')
+    def load_translation_pipeline_to_eng(self, language):
+        print(self.available_translators_to_eng)
+        if language in self.available_translators_to_eng:
+            return self.available_translators_to_eng[language]
+        else:
+            translator = pipeline('translation', model=self.translater_model, tokenizer=self.translated_tokenizer, src_lang=language, tgt_lang="eng_Latn")
+            print(self.available_translators_to_eng)
+            print(language)
+            self.available_translators_to_eng[language] = translator
+            return translator
+    
+    def translation_to_eng(self, question, src_language):
+        self.logger.info(f"Translating question, {question}, from {src_language} to 'eng_Latn'.")
+        translator = self.load_translation_pipeline_to_eng(src_language)
         output = translator(question, max_length=400)
-
         output = output[0]['translation_text']
-        print(output)
+        return output
 
     def _find_language(self, question):
         language = self.language_detector.detect_language_of(question)
