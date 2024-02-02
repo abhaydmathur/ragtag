@@ -36,7 +36,7 @@ def loadRAG(dataset_path, rag_model_path):
     model = RagSequenceForGeneration.from_pretrained(rag_model_path, retriever=retriever)
     tokenizer = RagTokenizer.from_pretrained(rag_model_path)
 
-    return retriever, model, tokenizer
+    return retriever, model, tokenizer, dataset
 
 
 def batch_inf(x, retriever, model, tokenizer):

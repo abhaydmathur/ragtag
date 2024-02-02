@@ -7,9 +7,11 @@ import pandas as pd
 
 
 class Configuration:
-    def __init__(self, loglevel, csv_file, input_question, output_file):
+    def __init__(self, loglevel, csv_file, input_question, output_file, dataset_documents, rag_model_path):
         self.logger = self.setup_logging(loglevel)
         self.available_translators_to_eng = {}
+        self.dataset_documents_path = dataset_documents
+        self.rag_model = rag_model_path
         self.questions = {}
         if csv_file:
             questions_df = pd.read_csv(csv_file[0], sep=";")
