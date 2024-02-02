@@ -42,7 +42,7 @@ def main(
 
     dataset = load_from_disk(rag_example_args.dataset_path)
     index_path = os.path.join(
-        "/".join(rag_example_args.dataset_path.split("/")[:-1]), "api_dataset_hnsw_index.faiss"
+        "/".join(rag_example_args.dataset_path.split("/")[:-1]), "hnsw_index.faiss"
     )
     dataset.load_faiss_index("embeddings", index_path)  # to reload the index
 
@@ -64,20 +64,22 @@ def main(
     # logger.info("Step 4 - Have fun")
     # ######################################
 
-    question = rag_example_args.question or "How many Italian government data requests did LinkedIn receive in 2022? Please provide the URL of the source."
-    input_ids = tokenizer.question_encoder(question, return_tensors="pt")["input_ids"]
+    question = ["How many Italian government data requests did LinkedIn receive in 2022? Please provide the URL of the source.", "What's your opinion on twitter's content regulations?"] 
+    input_ids = tokenizer.question_encoder(question, padding = True, return_tensors="pt")["input_ids"]
     question_hidden_states = model.question_encoder(input_ids)[0]
-    docs_dict = retriever(input_ids.numpy(), question_hidden_states.detach().numpy(), return_tensors="pt")
-    doc_scores = torch.bmm(
-        question_hidden_states.unsqueeze(1), docs_dict["retrieved_doc_embeds"].float().transpose(1, 2)
-    ).squeeze(1)
-    doc_id = np.argmax(doc_scores)
+    _, doc_ids, _ = model.retriever.retrieve(question_hidden_states.detach().numpy(),1)
+    #doc_scores = torch.bmm(
+     #   question_hidden_states.unsqueeze(1), docs_dict["retrieved_doc_embeds"].float().transpose(1, 2)
+    #)squeeze(1)
+    #print(doc_scores)
+#    print(f"Confidence Range : {np.min(doc_scores)}, {np.max(doc_scores)}")
+    #doc_ids = np.argmax(doc_scores)
     generated = model.generate(input_ids)
-    generated_string = tokenizer.batch_decode(generated, skip_special_tokens=True)[0]
-    logger.info("Q: " + question)
-    logger.info("A: " + generated_string)
-    logger.info(f"Doc: {doc_id}")
-
+    generated_string = tokenizer.batch_decode(generated, skip_special_tokens=True)
+    logger.info(f"Q: {question}")
+    logger.info(f"A:  {generated_string}")
+    logger.info(f"Docs: {doc_ids}")
+    logger.info(f"Doc_Titles: {[dataset[id]['title'] for id in doc_ids]}")
 
 @dataclass
 class RagExampleArguments:
