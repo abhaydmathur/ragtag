@@ -65,3 +65,44 @@ options:
   --m M                 The number of bi-directional links created for every new element during
                         the HNSW index construction. (default: 128)
 ```
+
+## Retrieval (Single Sample)
+
+```txt
+usage: retrieval.py [-h] [--dataset_path DATASET_PATH] [--question QUESTION]
+                    [--rag_model_name RAG_MODEL_NAME]
+                    [--dpr_ctx_encoder_model_name DPR_CTX_ENCODER_MODEL_NAME]
+                    [--output_dir OUTPUT_DIR] [--context_window CONTEXT_WINDOW]
+                    [--num_proc NUM_PROC] [--batch_size BATCH_SIZE] [--d D] [--m M]
+
+options:
+  -h, --help            show this help message and exit
+  --dataset_path DATASET_PATH
+                        Path to directory indexed dataset. (default: mds_dataset/api_dataset)
+  --question QUESTION   Question that is passed as input to RAG. Default is 'How many Italian
+                        government data requests did LinkedIn receive in 2022? Please provide the
+                        URL of the source.' (default: None)
+  --rag_model_name RAG_MODEL_NAME
+                        The RAG model to use. Either 'facebook/rag-sequence-nq' or 'facebook/rag-
+                        token-nq' (default: facebook/rag-sequence-nq)
+  --dpr_ctx_encoder_model_name DPR_CTX_ENCODER_MODEL_NAME
+                        The DPR context encoder model to use. Either 'facebook/dpr-ctx_encoder-
+                        single-nq-base' or 'facebook/dpr-ctx_encoder-multiset-base' (default:
+                        facebook/dpr-ctx_encoder-multiset-base)
+  --output_dir OUTPUT_DIR
+                        Path to a directory where the dataset passages and the index will be saved
+                        (default: None)
+  --context_window CONTEXT_WINDOW
+                        Context window (default: 10000)
+  --num_proc NUM_PROC   The number of processes to use to split the documents into passages.
+                        Default is single process. (default: None)
+  --batch_size BATCH_SIZE
+                        The batch size to use when computing the passages embeddings using the DPR
+                        context encoder. (default: 16)
+  --d D                 The dimension of the embeddings to pass to the HNSW Faiss index. (default:
+                        768)
+  --m M                 The number of bi-directional links created for every new element during
+                        the HNSW index construction. (default: 128)
+```
+
+## Retrieval (Batch)
