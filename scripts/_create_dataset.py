@@ -148,11 +148,11 @@ def main(
     # ######################################
 
     # # Easy way to load the model
-    # retriever = RagRetriever.from_pretrained(
-    #     rag_example_args.rag_model_name, index_name="custom", indexed_dataset=dataset
-    # )
-    # model = RagSequenceForGeneration.from_pretrained(rag_example_args.rag_model_name, retriever=retriever)
-    # tokenizer = RagTokenizer.from_pretrained(rag_example_args.rag_model_name)
+    retriever = RagRetriever.from_pretrained(
+        rag_example_args.rag_model_name, index_name="custom", indexed_dataset=dataset
+    )
+    model = RagSequenceForGeneration.from_pretrained(rag_example_args.rag_model_name, retriever=retriever)
+    tokenizer = RagTokenizer.from_pretrained(rag_example_args.rag_model_name)
 
     # # For distributed fine-tuning you'll need to provide the paths instead, as the dataset and the index are loaded separately.
     # # retriever = RagRetriever.from_pretrained(rag_model_name, index_name="custom", passages_path=passages_path, index_path=index_path)
@@ -161,12 +161,12 @@ def main(
     # logger.info("Step 4 - Have fun")
     # ######################################
 
-    # question = rag_example_args.question or "What does Moses' rod turn into ?"
-    # input_ids = tokenizer.question_encoder(question, return_tensors="pt")["input_ids"]
-    # generated = model.generate(input_ids)
-    # generated_string = tokenizer.batch_decode(generated, skip_special_tokens=True)[0]
-    # logger.info("Q: " + question)
-    # logger.info("A: " + generated_string)
+    question = rag_example_args.question or "How many Italian government data requests did LinkedIn receive in 2022? Please provide the URL of the source."
+    input_ids = tokenizer.question_encoder(question, return_tensors="pt")["input_ids"]
+    generated = model.generate(input_ids)
+    generated_string = tokenizer.batch_decode(generated, skip_special_tokens=True)[0]
+    logger.info("Q: " + question)
+    logger.info("A: " + generated_string)
 
 
 @dataclass
@@ -178,12 +178,12 @@ class RagExampleArguments:
             "help": "Path to directory with all markdown files."
         },
     )
-    # question: Optional[str] = field(
-    #     default=None,
-    #     metadata={
-    #         "help": "Question that is passed as input to RAG. Default is 'What does Moses' rod turn into ?'."
-    #     },
-    # )
+    question: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Question that is passed as input to RAG. Default is 'How many Italian government data requests did LinkedIn receive in 2022? Please provide the URL of the source.'"
+        },
+    )
     rag_model_name: str = field(
         default="facebook/rag-sequence-nq",
         metadata={

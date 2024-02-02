@@ -10,7 +10,8 @@ from typing import List, Optional
 import faiss
 import glob 
 import torch
-from datasets import Features, Sequence, Value, load_dataset, Dataset
+import numpy as np
+from datasets import Features, Sequence, Value, load_from_disk, Dataset
 
 from transformers import (
     DPRContextEncoder,
@@ -28,46 +29,6 @@ torch.set_grad_enabled(False)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def split_text(text: str, n=CONTEXT_WINDOW, character=" ") -> List[str]:
-    """Split the text every ``n``-th occurrence of ``character``"""
-    text = text.split(character)
-    return [character.join(text[i : i + n]).strip() for i in range(0, len(text), n)]
-
-
-def split_documents(documents: dict) -> dict:
-    """Split documents into passages"""
-    titles, texts = [], []
-    for title, text in zip(documents["title"], documents["text"]):
-        if text is not None:
-            for passage in split_text(text):
-                titles.append(title if title is not None else "")
-                texts.append(passage)
-    return {"title": titles, "text": texts}
-
-
-def embed(
-    documents: dict,
-    ctx_encoder: DPRContextEncoder,
-    ctx_tokenizer: DPRContextEncoderTokenizerFast,
-) -> dict:
-    """Compute the DPR embeddings of document passages"""
-    input_ids = ctx_tokenizer(
-        documents["title"],
-        documents["text"],
-        truncation=True,
-        padding="longest",
-        return_tensors="pt",
-    )["input_ids"]
-    embeddings = ctx_encoder(
-        input_ids.to(device=device), return_dict=True
-    ).pooler_output
-    return {"embeddings": embeddings.detach().cpu().numpy()}
-
-def read_markdown_file(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        content = file.read()
-        # TODO : Add markdown preproc
-        return content
 
 
 def main(
@@ -79,68 +40,11 @@ def main(
     logger.info("Step 1 - Create the dataset")
     ######################################
 
-    # The dataset needed for RAG must have three columns:
-    # - title (string): title of the document
-    # - text (string): text of a passage of the document
-    # - embeddings (array of dimension d): DPR representation of the passage
-
-
-    md_files = glob.glob(f"{rag_example_args.md_path}/*.md")
-    data = [{"text": read_markdown_file(file), "title" : file} for file in md_files]
-
-    # Create a Dataset instance from the list of dictionaries
-    dataset = Dataset.from_pandas(pd.DataFrame(data))
-
-    # More info about loading csv files in the documentation: https://huggingface.co/docs/datasets/loading_datasets?highlight=csv#csv-files
-
-    # Then split the documents into passages of 100 words
-    dataset = dataset.map(
-        split_documents, batched=True, num_proc=processing_args.num_proc
-    )
-
-    # And compute the embeddings
-    ctx_encoder = DPRContextEncoder.from_pretrained(
-        rag_example_args.dpr_ctx_encoder_model_name
-    ).to(device=device)
-    ctx_tokenizer = DPRContextEncoderTokenizerFast.from_pretrained(
-        rag_example_args.dpr_ctx_encoder_model_name
-    )
-    new_features = Features(
-        {
-            "text": Value("string"),
-            "title": Value("string"),
-            "embeddings": Sequence(Value("float32")),
-        }
-    )  # optional, save as float32 instead of float64 to save space
-    dataset = dataset.map(
-        partial(embed, ctx_encoder=ctx_encoder, ctx_tokenizer=ctx_tokenizer),
-        batched=True,
-        batch_size=processing_args.batch_size,
-        features=new_features,
-    )
-
-    # And finally save your dataset
-    passages_path = os.path.join(rag_example_args.output_dir, "api_dataset")
-    dataset.save_to_disk(passages_path)
-    # from datasets import load_from_disk
-    # dataset = load_from_disk(passages_path)  # to reload the dataset
-
-    ######################################
-    logger.info("Step 2 - Index the dataset")
-    ######################################
-
-    # Let's use the Faiss implementation of HNSW for fast approximate nearest neighbor search
-    index = faiss.IndexHNSWFlat(
-        index_hnsw_args.d, index_hnsw_args.m, faiss.METRIC_INNER_PRODUCT
-    )
-    dataset.add_faiss_index("embeddings", custom_index=index)
-
-    # And save the index
+    dataset = load_from_disk(rag_example_args.dataset_path)
     index_path = os.path.join(
-        rag_example_args.output_dir, "api_dataset_hnsw_index.faiss"
+        "/".join(rag_example_args.dataset_path.split("/")[:-1]), "api_dataset_hnsw_index.faiss"
     )
-    dataset.get_index("embeddings").save(index_path)
-    # dataset.load_faiss_index("embeddings", index_path)  # to reload the index
+    dataset.load_faiss_index("embeddings", index_path)  # to reload the index
 
     # ######################################
     # logger.info("Step 3 - Load RAG")
@@ -162,20 +66,26 @@ def main(
 
     question = rag_example_args.question or "How many Italian government data requests did LinkedIn receive in 2022? Please provide the URL of the source."
     input_ids = tokenizer.question_encoder(question, return_tensors="pt")["input_ids"]
-    
+    question_hidden_states = model.question_encoder(input_ids)[0]
+    docs_dict = retriever(input_ids.numpy(), question_hidden_states.detach().numpy(), return_tensors="pt")
+    doc_scores = torch.bmm(
+        question_hidden_states.unsqueeze(1), docs_dict["retrieved_doc_embeds"].float().transpose(1, 2)
+    ).squeeze(1)
+    doc_id = np.argmax(doc_scores)
     generated = model.generate(input_ids)
     generated_string = tokenizer.batch_decode(generated, skip_special_tokens=True)[0]
     logger.info("Q: " + question)
     logger.info("A: " + generated_string)
+    logger.info(f"Doc: {doc_id}")
 
 
 @dataclass
 class RagExampleArguments:
-    md_path: str = field(
+    dataset_path: str = field(
     # csv_path: str = field(
-        default=str(Path(__file__).parent / "test_data"),
+        default="mds_dataset/api_dataset",
         metadata={
-            "help": "Path to directory with all markdown files."
+            "help": "Path to directory indexed dataset."
         },
     )
     question: Optional[str] = field(
