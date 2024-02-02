@@ -1,9 +1,12 @@
 import argparse
 import sys
 import os
-
 from .configuration import Configuration
 
+def get_ressource_url(path_md):
+    with open(path_md) as f:
+        first_line = f.readline()
+        return first_line.split(" ")[3]
 
 def parse_args(args):
     parser = argparse.ArgumentParser(
@@ -155,7 +158,6 @@ def cli(args):
         fp = open(os.path.join(sources_path,f'{key}.txt'), 'w')
         fp.write("https://peren.gouv.fr")
         fp.close()
-
 
 def main():
     cli(sys.argv[1:])
