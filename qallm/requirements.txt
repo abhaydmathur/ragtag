@@ -4,3 +4,4 @@ pandas
 lingua-py
 faiss-gpu
 faiss-cpu
+datasets

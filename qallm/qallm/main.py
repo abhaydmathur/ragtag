@@ -75,7 +75,7 @@ def parse_args(args):
 def cli(args):
     args = parse_args(args)
     config = Configuration(
-        args.loglevel, args.csv_file, args.input_question, args.output_file,args.dataset_documents, args.rag_model_path
+        args.loglevel, args.csv_file, args.input_question, args.output_file
     )
     current_entry = config.get_next_element()
     questions = {}
@@ -157,7 +157,7 @@ def cli(args):
     answers = {}
 
 
-    ret, model, tokenizer, doc_data = loadRAG(args.dataset_path, args.rag_model_path)
+    ret, model, tokenizer, doc_data = loadRAG(config.dataset_documents_path, config.rag_model)
 
     responses, doc_ids = batch_inf([questions[id] for id in questions.keys()], ret, model, tokenizer)
 
