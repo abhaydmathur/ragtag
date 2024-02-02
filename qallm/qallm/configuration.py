@@ -1,9 +1,9 @@
 """ Preprocessing user input """
-from polyglot.text import Text
+from lingua import Language, LanguageDetectorBuilder
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 import sys
 import logging
 import pandas as pd
-
 
 class Configuration:
     def __init__(self, loglevel, csv_file, input_question, output_file):
@@ -21,7 +21,7 @@ class Configuration:
             exit(1)
 
         self.logger.info(f"Loaded questions that shall be answered {self.questions}")
-
+        self.language_detector = self._initialise_language_detector()
         self.output_file = output_file
 
     def setup_logging(self, loglevel):
@@ -41,7 +41,48 @@ class Configuration:
         question_language = self._find_language(question)
         # return the id, question, and the language in which the question was asked
         return (question_index, question, question_language)
+    
+    def translation(self, question, language):
+        self.logger.info(f"Translating question, {question}, from {language} to english.")
+        model_path = "/gpfsdswork/dataset/HuggingFace_Models/facebook/nllb-200-3.3B"
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+
+        translator = pipeline('translation', model=model, tokenizer=tokenizer, src_lang="fra_Latn", tgt_lang='eng_Latn')
+        output = translator(question, max_length=400)
+
+        output = output[0]['translation_text']
+        print(output)
 
     def _find_language(self, question):
-        text = Text(question)
-        return text.language.code
+        language = self.language_detector.detect_language_of(question)
+        return language.iso_code_639_1
+    
+    def _initialise_language_detector(self):
+        # Narrow down the dection of the 24 official language of the European Union
+        languages = [
+            Language.BULGARIAN,
+            Language.CROATIAN,
+            Language.CZECH,
+            Language.DANISH,
+            Language.DUTCH,
+            Language.ENGLISH,
+            Language.ESTONIAN,
+            Language.FINNISH,
+            Language.FRENCH,
+            Language.GERMAN,
+            Language.GREEK,
+            Language.HUNGARIAN,
+            Language.IRISH,
+            Language.ITALIAN,
+            Language.LATVIAN,
+            Language.LITHUANIAN,
+            Language.POLISH,
+            Language.PORTUGUESE,
+            Language.ROMANIAN,
+            Language.SLOVAK,
+            Language.SLOVENE,
+            Language.SPANISH,
+            Language.SWEDISH,
+        ]
+        return LanguageDetectorBuilder.from_languages(*languages).build()

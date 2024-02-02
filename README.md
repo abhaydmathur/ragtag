@@ -3,11 +3,13 @@
 ## Usage
 
 Our repository contains submodules, linking to the datasets made available for the hackathon. To reproduce our results
-it is thus required to clone this repository with the recursion flag, as below,
+it is thus required to clone this repository with the recursion flag, as below, and you are located on the ```$WORK``` directory on the Jean-Zay supercomputer.
 
 ```bash
 git clone --recurse-submodules git@github.com:abhaydmathur/ragtag.git ; cd ragtag
-cd qallm ; pip install .
+cd qallm
+.venv/bin/pip install --no-cache-dir -r requirements.txt
+pip install .
 ```
 
 ```bash

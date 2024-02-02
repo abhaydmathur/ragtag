@@ -54,8 +54,9 @@ def cli(args):
     config = Configuration(
         args.loglevel, args.csv_file, args.input_question, args.output_file
     )
-    print(config.get_next_element())
-
+    question_index, question, question_language = config.get_next_element()
+    print(question_index, question, question_language.name)
+    config.translation(question, question_language.name)
 
 def main():
     cli(sys.argv[1:])
