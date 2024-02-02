@@ -9,7 +9,8 @@ with open("README.md", "r") as fh:
 install_requires = [
     "numpy>=1.24.1",
     "pandas>=1.5.2",
-    "setuptools"
+    "setuptools",
+    "lingua-language-detector"
 ]
 
 def read(rel_path):

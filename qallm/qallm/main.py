@@ -2,7 +2,8 @@ import argparse
 import sys
 
 
-from .preprocessing import Configuration
+from .configuration import Configuration
+
 
 def parse_args(args):
     parser = argparse.ArgumentParser(
@@ -50,7 +51,10 @@ def parse_args(args):
 
 def cli(args):
     args = parse_args(args)
-    config = Configuration(args.loglevel, args.csv_file, args.input_question, args.output_file)
+    config = Configuration(
+        args.loglevel, args.csv_file, args.input_question, args.output_file
+    )
+    print(config.get_next_element())
 
 
 def main():
