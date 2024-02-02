@@ -1,5 +1,5 @@
 """ Preprocessing user input """
-from lingua import Language, LanguageDetectorBuilder
+from polyglot.text import Text
 import sys
 import logging
 import pandas as pd
@@ -22,9 +22,6 @@ class Configuration:
 
         self.logger.info(f"Loaded questions that shall be answered {self.questions}")
 
-        # Initialise language detection model
-        self.language_detector = self._initialise_language_detector()
-
         self.output_file = output_file
 
     def setup_logging(self, loglevel):
@@ -46,34 +43,5 @@ class Configuration:
         return (question_index, question, question_language)
 
     def _find_language(self, question):
-        language = self.language_detector.detect_language_of(question)
-        return language.iso_code_639_1
-
-    def _initialise_language_detector(self):
-        # Narrow down the dection of the 24 official language of the European Union
-        languages = [
-            Language.BULGARIAN,
-            Language.CROATIAN,
-            Language.CZECH,
-            Language.DANISH,
-            Language.DUTCH,
-            Language.ENGLISH,
-            Language.ESTONIAN,
-            Language.FINNISH,
-            Language.FRENCH,
-            Language.GERMAN,
-            Language.GREEK,
-            Language.HUNGARIAN,
-            Language.IRISH,
-            Language.ITALIAN,
-            Language.LATVIAN,
-            Language.LITHUANIAN,
-            Language.POLISH,
-            Language.PORTUGUESE,
-            Language.ROMANIAN,
-            Language.SLOVAK,
-            Language.SLOVENE,
-            Language.SPANISH,
-            Language.SWEDISH,
-        ]
-        return LanguageDetectorBuilder.from_languages(*languages).build()
+        text = Text(question)
+        return text.language.code
